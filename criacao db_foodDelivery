@@ -1,0 +1,217 @@
+CREATE SCHEMA IF NOT EXISTS db_foodDelivery;
+
+USE db_foodDelivery; 
+
+CREATE TABLE IF NOT EXISTS tb_usuario (
+  usuario_id int NOT NULL AUTO_INCREMENT,
+  senha int(8) NOT NULL,
+  data_criacao datetime  UNIQUE NOT NULL,
+  data_ultima_atualizacao datetime DEFAULT NULL,
+  ativo bit(1) NOT NULL,
+  PRIMARY KEY (usuario_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_cliente (
+  cliente_id int NOT NULL AUTO_INCREMENT,
+  usuario varchar(20) NOT NULL,
+  cpf char(11) NOT NULL,
+  rg varchar(11) NOT NULL,
+  pre_nome varchar(15) NOT NULL,
+  sobrenome varchar(80) NOT NULL,
+  sexo char(1) DEFAULT NULL,
+  data_nascimento DATE NOT NULL,
+  PRIMARY KEY (cliente_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_categoria_estabelecimento (
+  categoria_estabelecimento_id int NOT NULL AUTO_INCREMENT,
+  nome varchar(40) UNIQUE NOT NULL,
+  PRIMARY KEY (categoria_estabelecimento_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_estabelecimento (
+  estabelecimento_id int NOT NULL AUTO_INCREMENT,
+  categoria_estabelecimento_id int NOT NULL,
+  cnpj char(14) UNIQUE NOT NULL,
+  razao_social varchar(60) UNIQUE NOT NULL,
+  nome_fantasia varchar(60) NOT NULL,
+  descricao varchar(144) DEFAULT NULL,
+  email varchar(30) NOT NULL,
+  nota decimal(3,2) NOT NULL,
+  PRIMARY KEY (estabelecimento_id),
+  FOREIGN KEY (categoria_estabelecimento_id) REFERENCES 
+  tb_categoria_estabelecimento (categoria_estabelecimento_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_contato_estabelecimento (
+  estabelecimento_id int NOT NULL,
+  contato char(11) NOT NULL,
+  FOREIGN KEY (estabelecimento_id) REFERENCES tb_estabelecimento (estabelecimento_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_endereco (
+  cep char(8) NOT NULL,
+  tipo_logradouro varchar(12) DEFAULT NULL,
+  logradouro varchar(40) DEFAULT NULL,
+  bairro varchar(40) DEFAULT NULL,
+  cidade varchar(30) NOT NULL,
+  uf char(2) NOT NULL,
+  PRIMARY KEY (cep)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_endereco_cliente (
+  endereco_cliente_id int NOT NULL AUTO_INCREMENT,
+  cliente_id int NOT NULL,
+  cep char(8) NOT NULL,
+  numero varchar(8) DEFAULT NULL,
+  ponto_referencia varchar(40) DEFAULT NULL,
+  complemento varchar(40) DEFAULT NULL,
+  PRIMARY KEY (endereco_cliente_id),
+  FOREIGN KEY (cliente_id) REFERENCES tb_cliente (cliente_id),
+  FOREIGN KEY (cep) REFERENCES tb_endereco (cep)
+  );
+CREATE TABLE IF NOT EXISTS tb_status (
+  status_id int NOT NULL AUTO_INCREMENT,
+  nome varchar(20) UNIQUE NOT NULL,
+  status_anterior int NULL,
+  status_proximo int NULL,
+  PRIMARY KEY (status_id),
+  FOREIGN KEY (status_anterior) REFERENCES tb_status (status_id),
+  FOREIGN KEY (status_proximo) REFERENCES tb_status (status_id)
+  );
+  
+  
+  CREATE TABLE IF NOT EXISTS tb_pedido (
+  pedido_id int NOT NULL AUTO_INCREMENT,
+  endereco_cliente_id int NOT NULL,
+  estabelecimento_id int NOT NULL,
+  cliente_id int NOT NULL,
+  status_id int NOT NULL,
+  data_hora_solicitacao datetime DEFAULT NULL,
+  data_hora_entrega datetime NOT NULL,
+  total decimal(7,2) NOT NULL,
+  desconto decimal(7,2) NOT NULL,
+  PRIMARY KEY (pedido_id),
+  FOREIGN KEY (endereco_cliente_id) REFERENCES tb_endereco_cliente (endereco_cliente_id),
+  FOREIGN KEY (estabelecimento_id) REFERENCES tb_estabelecimento (estabelecimento_id),
+  FOREIGN KEY (cliente_id) REFERENCES tb_cliente (cliente_id),
+  FOREIGN KEY (status_id) REFERENCES tb_status (status_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_pedido_historico (
+  pedido_id int NOT NULL,
+  status_id int NOT NULL,
+  data_hora datetime DEFAULT NULL,
+  FOREIGN KEY (pedido_id) REFERENCES tb_pedido (pedido_id),
+  FOREIGN KEY (status_id) REFERENCES tb_status (status_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_estabelecimento_endereco (
+  estabelecimento_id int NOT NULL,
+  cep char(8) NOT NULL,
+  numero varchar(8) DEFAULT NULL,
+  ponto_referencia varchar(40) DEFAULT NULL,
+  complemento varchar(40) DEFAULT NULL,
+  PRIMARY KEY (estabelecimento_id, cep),
+  FOREIGN KEY (estabelecimento_id) REFERENCES tb_estabelecimento (estabelecimento_id),
+  FOREIGN KEY (cep) REFERENCES tb_endereco (cep)
+  );
+  
+  
+  CREATE TABLE IF NOT EXISTS tb_dias_semana (
+  dia_id int NOT NULL AUTO_INCREMENT,
+  nome varchar(15) UNIQUE DEFAULT NULL,
+  PRIMARY KEY (dia_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_horario_funcionamento (
+  estabelecimento_id int NOT NULL,
+  dia_id int NOT NULL,
+  horario_inicio time DEFAULT NULL,
+  horario_fim time DEFAULT NULL,
+  almoco bit(1) DEFAULT NULL,
+  FOREIGN KEY (estabelecimento_id) REFERENCES tb_estabelecimento (estabelecimento_id),
+  FOREIGN KEY (dia_id) REFERENCES tb_dias_semana(dia_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_categoria_cardapio (
+  categoria_cardapio_id int NOT NULL AUTO_INCREMENT,
+  nome varchar(20) UNIQUE NOT NULL,
+  PRIMARY KEY (categoria_cardapio_id)
+  );
+  
+ CREATE TABLE IF NOT EXISTS tb_cardapio (
+  cardapio_id int NOT NULL AUTO_INCREMENT,
+  categoria_cardapio_id int NOT NULL,
+  estabelecimento_id int NOT NULL,
+  nome varchar(20) NOT NULL,
+  PRIMARY KEY (cardapio_id),
+  FOREIGN KEY (categoria_cardapio_id) REFERENCES tb_categoria_cardapio (categoria_cardapio_id),
+  FOREIGN KEY (estabelecimento_id) REFERENCES tb_estabelecimento (estabelecimento_id)
+  );
+ 
+  CREATE TABLE IF NOT EXISTS tb_categoria_item (
+  categoria_item_id int NOT NULL AUTO_INCREMENT,
+  nome varchar(20) UNIQUE NOT NULL,
+  PRIMARY KEY (categoria_item_id)
+  );
+  
+CREATE TABLE IF NOT EXISTS tb_item_cardapio (
+  item_id int NOT NULL AUTO_INCREMENT,
+  cardapio_id int NOT NULL,
+  categoria_item_id int NOT NULL,
+  nome varchar(30) NOT NULL,
+  preco_unitario decimal(6,2) NOT NULL,
+  descricao varchar(30) NOT NULL,
+  observacoes varchar(144) DEFAULT NULL,
+  PRIMARY KEY (item_id),
+  FOREIGN KEY (cardapio_id) REFERENCES tb_cardapio (cardapio_id),
+  FOREIGN KEY (categoria_item_id) REFERENCES tb_categoria_item (categoria_item_id)
+  );
+  
+CREATE TABLE IF NOT EXISTS tb_item_pedido(
+  pedido_id int NOT NULL AUTO_INCREMENT,
+  item_cardapio_id integer NOT NULL,
+  quantidade int NOT NULL, 
+  observacao varchar(144) NULL,
+  PRIMARY KEY (Pedido_id, item_cardapio_id),
+  FOREIGN KEY (Pedido_id) REFERENCES tb_pedido(Pedido_id),
+  FOREIGN KEY (Item_cardapio_id) REFERENCES tb_item_cardapio(item_id)
+  );
+
+ CREATE TABLE IF NOT EXISTS tb_cartao (
+  cartao_id int NOT NULL AUTO_INCREMENT,
+  cliente_id int NOT NULL,
+  numero char(16) NOT NULL,
+  nome varchar(20) NOT NULL,
+  validade char(5) NOT NULL,
+  cvv char(3) NOT NULL,
+  PRIMARY KEY (cartao_id),
+  FOREIGN KEY (cliente_id) REFERENCES tb_cliente (cliente_id)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_voucher (
+  codigo_promo varchar(15) NOT NULL,
+  valor decimal(7,2) DEFAULT NULL,
+  porcentagem decimal(3,2) DEFAULT NULL,
+  tipo_voucher bit(1) NOT NULL,
+  data_inicio datetime NOT NULL,
+  data_fim datetime NOT NULL,
+  descricao varchar(144) NOT NULL,
+  quantidade int NOT NULL,
+  PRIMARY KEY (codigo_promo)
+  );
+  
+  CREATE TABLE IF NOT EXISTS tb_pagamento (
+  pedido_id int NOT NULL,
+  cartao_id int DEFAULT NULL,
+  codigo_promo varchar(15) DEFAULT NULL,
+  valor decimal(7,2) NOT NULL,
+  data_hora datetime DEFAULT NULL,
+  FOREIGN KEY (pedido_id) REFERENCES tb_pedido (pedido_id),
+  FOREIGN KEY (cartao_id) REFERENCES tb_cartao (cartao_id),
+  FOREIGN KEY (codigo_promo) REFERENCES tb_voucher (codigo_promo)
+  );
+ 
+ 
+  
